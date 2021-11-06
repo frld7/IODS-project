@@ -9,5 +9,15 @@
 date()
 
 ```
-The text continues here.
 
+**I decided to take this course for two reasons:**  
+
+* I'm interested in learning more about the possibilities that open data offers.  
+* I thought that taking this course would be a good way to refresh my knowledge about Git and GitHub.  
+
+I heard about this course from friends.
+
+Setting up all of the needed tools for this course sounded like a difficult task at first, but it turned out to be easier than I had expected.
+
+### My project repository:
+https://github.com/frld7/IODS-project
