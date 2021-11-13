@@ -1,13 +1,73 @@
-# Insert chapter 2 title here
+# Week 2: Regression and model validation
 
 *Describe the work you have done this week and summarize your learning.*
 
-- Describe your work and results clearly. 
-- Assume the reader has an introductory course level understanding of writing and reading R code as well as statistical methods.
-- Assume the reader has no previous knowledge of your data or the more advanced methods you are using.
+This week I followed the example of Data camp exercises to visualize the data and fit a simple linear regression model.  
 
 ```{r}
 date()
 ```
 
-Here we go again...
+```{r}
+learning2014 <- read.table('data/learning2014.txt')
+
+str(learning2014)
+```
+
+```{r}
+dim(learning2014)
+```
+
+The data includes 166 observations of 7 variables. Variables age and points are of type int, variable gender is of type chr and the rest of the variables are of type num.
+
+```{r}
+library(GGally)
+library(ggplot2)
+ggpairs(learning2014, mapping = aes(col=gender , alpha = 0.3), lower = list(combo = wrap("facethist", bins = 20)))
+```
+  
+Above are some pairwise visualizations of the variables in the data. The students are mainly under 30 years old. There are about twice as many female students as there are male students. The attitude and the points have a moderately high positive correlation. The absolute value of correlation is only higher in the case of deep learning and surface learning, where there is quite a noticeable negative correlation, but only in the case of male students. The correlation between these variables is much lower in the case of female students.
+
+```{r}
+model <- lm(points ~ attitude + stra + surf, data = learning2014)
+summary(model)
+```
+
+Each additional unit of variable _attitude_ is associated with about 3.4 unit _increase_ in points.  
+Each additional unit of variable _stra_ is associated with about 0.85 unit _increase_ in points.  
+Each additional unit of variable _surf_ is associated with about 0.59 unit _decrease_ in points.  
+
+The null hypothesis for each variable is that the variable has no effect on target variable (points). Pr(>|t|) in the summary is the p-value associated with this test.     
+
+Variables stra and surf do not have a statistically significant relationship with the points, so let's fit a new model without them:  
+
+```{r}
+model2 <- lm(points ~ attitude, data = learning2014)
+summary(model2)
+```
+
+Now each additional unit of variable _attitude_ is associated with about 3.53 unit _increase_ in points.  
+
+R2 is the proportion of the variation in the target variable that is explained by the model. Here it is 0.1906, so this model explains about 19% of the variation in points.
+
+```{r, fig.height = 7, fig.width = 7}
+par(mfrow = c(2,2))
+plot(model2, which=c(1,2,5))
+```
+
+  
+In addition to the linearity assumption the model assumes that the errors are not correlated and that their size is not dependent on the explanatory variables. The model also assumes:  
+
+-Constant variance of errors. The residuals vs fitted plot seems passable. The points are rather concentrated in the middle in the higher end of the fitted values, but then again the number of those points is small, which might be the reason for smaller observed variance.  
+
+-Normality of the errors. The qq-plot is passable but is a bit weird at the ends.  
+
+The residuals vs leverage plot seems fine. No single data point particularly stands out.
+
+
+
+
+
+
+
+
