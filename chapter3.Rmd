@@ -1,0 +1,13 @@
+# Week 3: Logistic regression  
+
+Week 3 exercises
+
+```{r}
+date()
+```
+
+```{r}
+alc <- read.table('https://github.com/rsund/IODS-project/raw/master/data/alc.csv', sep = "," , header=TRUE)
+
+colnames(alc)
+```
