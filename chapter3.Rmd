@@ -11,3 +11,80 @@ alc <- read.table('https://github.com/rsund/IODS-project/raw/master/data/alc.csv
 
 colnames(alc)
 ```
+```{r}
+dim(alc)
+```
+The data has 51 variables and 370 rows, and is about Portugese students.  
+
+4 chosen variables of interest:  
+age - student's age (hypothesis: high consumption could be associated with higher age)  
+goout - going out with friends (hypothesis: high consumption could be associated with higher goout)   
+failures - number of past class failures (hypothesis: high consumption could be associated with higher amount of failures)  
+absences - number of school absences (hypothesis: high consumption could be associated with higher amount of absences)  
+
+```{r}
+library(ggplot2)
+
+g1 <- ggplot(alc, aes(x=high_use, y=age))
+g1 + geom_boxplot()
+
+g2 <- ggplot(alc, aes(x=high_use, y=goout))
+g2 + geom_boxplot()
+
+g3 <- ggplot(alc, aes(x=high_use, y=failures))
+g3 + geom_boxplot()
+
+g4 <- ggplot(alc, aes(x=high_use, y=absences))
+g4 + geom_boxplot()
+
+```
+
+```{r}
+table(high_use = alc$high_use, age = alc$age)
+table(high_use = alc$high_use, goout = alc$goout)
+table(high_use = alc$high_use, failures = alc$failures)
+table(high_use = alc$high_use, absences = alc$absences)
+```
+All of the above hypotheses seem reasonably possible based on this data. With all of the variables, the higher variable values were expected to be associated with high_use=True. The data supports these relationships at least to some extent, even though it is a bit hard to read the tables because of the class imbalance between True/False labels in high_use.  
+
+```{r}
+library(tidyr)
+
+m <- glm(high_use ~ age + goout + failures + absences, data = alc, family = "binomial")
+
+summary(m)
+
+OR <- coef(m) %>% exp
+CI <- confint(m) %>% exp
+cbind(OR, CI)
+```
+Variable age is not statistically significant in this model. Age's confidence interval for odds ratio includes 1 which foreshadows this result.  
+
+The other variables are significant in this model, variable failures with significance treshold 0.05 and goout and absences with significance treshold 0.001. The absolute effect of absences is smaller than the other significant variables.  
+
+The odds ratios can be interpreted as ratios between unit change / no unit change in the explanatory variable. Variable goout has an odds ratio of over 2, so the unit change in high_use is twice as likely as no unit change.  
+
+Comparing the results with the previous hypotheses, the hypothesis about age is not supported by the evidence.  
+
+```{r}
+library(dplyr)
+m2 <- glm(high_use ~ goout + failures + absences, data = alc, family = "binomial")
+
+probabilities <- predict(m2, type = "response")
+alc <- mutate(alc, probability = probabilities)
+alc <- mutate(alc, prediction = probability > 0.5)
+
+t = table(high_use = alc$high_use, prediction = alc$prediction)
+err_training = (t[1,2]+t[2,1])/sum(t)
+
+print(paste('Training error: ', round(err_training,4)))
+t
+```
+
+The model performance as a whole is fairly satisfactory, but many of the instances of high_use=True are still left unidentified (66/(66+45)). In other words, the model has a rather low recall.     
+
+Comparing the model to a simple guessing strategy, if half of the time the guess about the binary output would be correct, the model is much better, because it gives the wrong answer only about 24% of the time.  
+
+
+
+
