@@ -1,0 +1,84 @@
+# Week 4: Clustering and classification  
+
+Week 4 exercises
+
+```{r}
+date()
+```
+```{r}
+library(MASS)
+library(tidyr)
+library(corrplot)
+```
+
+```{r}
+data("Boston")
+
+str(Boston)
+```
+```{r}
+dim(Boston)
+```
+The dataset has 506 rows and 14 variables and it has information on housing values in Boston.  
+
+```{r}
+summary(Boston)
+```
+
+```{r, fig.height = 15, fig.width = 15}
+pairs(Boston)
+```
+```{r, fig.height = 6, fig.width = 6}
+cor_matrix<-cor(Boston) %>% round(digits = 2)
+corrplot(cor_matrix, method="number", type="upper", cl.pos="b", tl.pos="d")
+```
+  
+Variables rad (index of accessibility to radial highways) and tax (full-value property-tax rate per \$10,000) seem to be highly correlated. Other moderately strong positive correlations can be found between indus (proportion of non-retail business acres per town) and nox (nitrogen oxides concentration), nox and age (proportion of owner-occupied units built prior to 1940), indus and tax, rm (average number of rooms per dwelling) and medv (median value of owner-occupied homes in \$1000s). Variables lstat (lower status of the population (percent)) and medv are negatively correlated. dis (weighted mean of distances to five Boston employment centres) is negatively correlated with indus, nox and age.  
+
+```{r, fig.height = 6, fig.width = 6}
+#Scaling
+boston_scaled <- scale(Boston)
+boston_scaled <- as.data.frame(boston_scaled)
+summary(boston_scaled)
+```
+```{r, fig.height = 6, fig.width = 6}
+set.seed(1)
+# Categorial variable
+bins <- quantile(boston_scaled$crim)
+crime <- cut(boston_scaled$crim, breaks = bins, include.lowest = TRUE, label=c("low", "med_low", "med_high", "high"))
+boston_scaled <- dplyr::select(boston_scaled, -crim)
+boston_scaled <- data.frame(boston_scaled, crime)
+# Dividing into training and test datasets
+n <- nrow(boston_scaled)
+ind <- sample(n,  size = n * 0.8)
+train <- boston_scaled[ind,]
+test <- boston_scaled[-ind,]
+```
+
+Linear discriminant analysis:  
+```{r, fig.height = 7, fig.width = 7}
+lda.fit <- lda(crime ~ ., data = train)
+
+lda.arrows <- function(x, myscale = 1, arrow_heads = 0.1, color = "orange", tex = 0.75, choices = c(1,2)){
+  heads <- coef(x)
+  arrows(x0 = 0, y0 = 0, 
+         x1 = myscale * heads[,choices[1]], 
+         y1 = myscale * heads[,choices[2]], col=color, length = arrow_heads)
+  text(myscale * heads[,choices], labels = row.names(heads), 
+       cex = tex, col=color, pos=3)
+}
+
+classes <- as.numeric(train$crime)
+
+plot(lda.fit, dimen = 2, col = classes, pch = classes)
+lda.arrows(lda.fit, myscale = 1)
+
+```
+```{r}
+correct_classes <- test$crime
+test <- dplyr::select(test, -crime)
+
+lda.pred <- predict(lda.fit, newdata = test)
+table(correct = correct_classes, predicted = lda.pred$class)
+```
+The predictions are otherwise fairly accurate, but for class 'low' there are a lot of wrong predictions under the predicted label 'med_low'. Half of the data points under the class label 'low' to be exact.  
