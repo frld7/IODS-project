@@ -1,0 +1,77 @@
+# Week 5: Dimensionality reduction techniques  
+
+Week 5 exercises
+
+```{r}
+date()
+```
+
+```{r}
+human <- read.table('http://s3.amazonaws.com/assets.datacamp.com/production/course_2218/datasets/human2.txt', sep = "," , header=TRUE)
+library(tidyr)
+library(corrplot)
+
+summary(human)
+```
+
+```{r, fig.height = 15, fig.width = 15}
+pairs(human)
+```
+```{r, fig.height = 6, fig.width = 6}
+cor_matrix<-cor(human) %>% round(digits = 2)
+corrplot(cor_matrix, method="number", type="upper", cl.pos="b", tl.pos="d")
+```
+
+Some of the strongest positive correlations are between Edu.Exp and Life.Exp (0.79), and Mat.Mor and Ado.Birth (0.76). Strongest negative correlations can be found between Life.Exp and Mat.Mor (-0.86), Edu.Exp and Mat.Mor (-0.74), and Life.Exp and Ado.Birth (-0.73).  
+
+
+
+```{r, fig.height = 6, fig.width = 6}
+# PCA on not standardized data
+pca_human <- prcomp(human)
+biplot(pca_human, choices = 1:2, cex=c(0.8, 1))
+```
+```{r, fig.height = 6, fig.width = 6}
+# PCA on standardized data
+human_std <- scale(human)
+pca_human <- prcomp(human_std)
+biplot(pca_human, choices = 1:2, cex=c(0.8, 1))
+```
+
+The non standardized data gives results that are hard to interpret because the scale of the variables is so different. The variable GNI, that is Gross National Income per capita, has the largest scale of values. In the upper plot GNI is the only variable that can be clearly identified to have a particularly large variance and high correlation with PC1.  
+
+The bottom plot is easier to interpret. Expected years of schooling (Edu.Exp), Gross National Income per capita (GNI), the ratio of Proportion of females with at least secondary education / Proportion of males with at least secondary education (Edu2.FM) and Life expectancy at birth (Life.Exp) are highly correlated with each other and with PC1. Maternal mortality ratio (Mat.Mor) and Adolescent birth rate (Ado.Birth) are also correlated with PC1 and each other. The ratio of Proportion of females in the labour force / Proportion of males in the labour force (Labo.FM) and Percetange of female representatives in parliament (Parli.F) are correlated with each other and PC2.  
+
+Seems like PC1 is related with wellbeing, mortality and birth -related variables, while PC2 is related with gender equality -related variables.  
+
+```{r}
+library(FactoMineR)
+data("tea")
+dim(tea)
+```
+
+
+```{r}
+str(tea)
+```
+```{r, fig.height = 12, fig.width = 6}
+library(ggplot2)
+library(tidyr)
+gather(tea) %>% ggplot(aes(value)) + facet_wrap("key", scales = "free") + geom_bar() + theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 8))
+```
+
+```{r}
+# Let's not use all of the columns for the MCA
+keep_columns <- c("Tea", "How", "how", "sugar", "where", "lunch")
+tea_time <- dplyr::select(tea, one_of(keep_columns))
+mca <- MCA(tea_time, graph = FALSE)
+summary(mca)
+```
+
+```{r, fig.height = 6, fig.width = 6}
+plot(mca, invisible=c("ind"), habillage = "quali", graph.type = "classic")
+```
+
+
+
+
