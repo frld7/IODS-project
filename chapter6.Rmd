@@ -1,0 +1,95 @@
+# Week 6: Analysis of longitudinal data  
+
+Week 6 exercises
+
+```{r}
+date()
+```
+
+```{r}
+RATSL <- read.table('data/RATSL.txt')
+
+library(ggplot2)
+library(dplyr)
+library(tidyr)
+
+RATSL$ID <- factor(RATSL$ID)
+RATSL$Group <- factor(RATSL$Group)
+
+ggplot(RATSL, aes(x = Time, y = Weight, col = ID)) +
+  geom_line() +
+  facet_grid(. ~ Group, labeller = label_both) +
+  scale_y_continuous(limits = c(min(RATSL$Weight), max(RATSL$Weight)))
+
+# there were not enough different linetypes for all IDs so I used colors instead
+```
+
+
+```{r}
+RATSL <- RATSL %>%
+  dplyr::group_by(Time) %>%
+  mutate(Weight = (Weight - mean(Weight))/sd(Weight) ) %>%
+  ungroup()
+
+ggplot(RATSL, aes(x = Time, y = Weight, col = ID)) +
+  geom_line() +
+  facet_grid(. ~ Group, labeller = label_both) +
+  scale_y_continuous(name = "standardized Weight")
+  scale_y_continuous(limits = c(min(RATSL$Weight), max(RATSL$Weight)))
+```
+
+```{r}
+n <- RATSL$Time %>% unique() %>% length()
+
+RATSL2 <- RATSL %>%
+  dplyr::group_by(Group, Time) %>%
+  dplyr::summarise(mean = mean(Weight), se = sd(Weight)/sqrt(n) ) %>%
+  ungroup()
+
+ggplot(RATSL2, aes(x = Time, y = mean, linetype = Group, shape = Group)) +
+  geom_line() +
+  scale_linetype_manual(values = c(1,2,3)) +
+  geom_point(size=3) +
+  scale_shape_manual(values = c(1,2,3)) +
+  geom_errorbar(aes(ymin = mean - se, ymax = mean + se, linetype="1"), width=0.3) +
+  theme(legend.position = c(0.8,0.5)) +
+  scale_y_continuous(name = "mean(Weight) +/- se(Weight)")
+```
+```{r}
+RATSL3 <- RATSL %>%
+  dplyr::group_by(Group, Weight) %>%
+  dplyr::summarise(mean=mean(Weight)) %>%
+  ungroup()
+
+ggplot(RATSL3, aes(x = Group, y = mean)) +
+  geom_boxplot() 
+```
+```{r}
+BPRSL <- read.table('data/BPRSL.txt')
+
+BPRSL$treatment <- factor(BPRSL$treatment)
+BPRSL$subject <- factor(BPRSL$subject)
+
+BPRSL_reg <- lm(bprs ~ week + treatment, data = BPRSL)
+
+summary(BPRSL_reg)
+```
+
+```{r}
+library(lme4)
+# Random intercept model
+BPRSL_ref <- lmer(bprs ~ week + treatment + (1 | subject), data = BPRSL, REML = FALSE)
+summary(BPRSL_ref)
+```
+
+```{r}
+# Random intercept and random slope model
+BPRSL_ref1 <- lmer(bprs ~ week + treatment + (week | subject), data = BPRSL, REML = FALSE)
+summary(BPRSL_ref1)
+```
+
+```{r}
+# Random intercept and random slope model with interaction
+BPRSL_ref2 <- lmer(bprs ~ week * treatment + (week | subject), data = BPRSL, REML = FALSE)
+summary(BPRSL_ref2)
+```
